@@ -1,0 +1,94 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile in Advait Insights CBSE Portal",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 150
+        },
+        "role": {
+          "type": "string",
+          "enum": ["student", "teacher", "admin"]
+        },
+        "grade": {
+          "type": "string",
+          "enum": ["class9", "class10"]
+        },
+        "rollNumberOrSection": {
+          "type": "string",
+          "maxLength": 50
+        },
+        "advaitCoins": {
+          "type": "number"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
+        }
+      },
+      "required": ["id", "name", "role"]
+    },
+    "Doubt": {
+      "title": "Doubt",
+      "description": "Student mathematics doubts and queries",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "studentId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "studentName": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "chapter": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "questionText": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "status": {
+          "type": "string",
+          "enum": ["open", "resolved"]
+        },
+        "createdAt": {
+          "type": "string"
+        }
+      },
+      "required": ["id", "studentId", "questionText"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/User"
+      },
+      "description": "User account profiles and Advait Coins balance"
+    },
+    "/doubts/{doubtId}": {
+      "schema": {
+        "$ref": "#/entities/Doubt"
+      },
+      "description": "CBSE Math doubts and questions submitted by students"
+    }
+  }
+}

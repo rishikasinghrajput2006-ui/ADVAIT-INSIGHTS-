@@ -1,0 +1,77 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Default Deny Catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Security Primitives
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'rishikasinghrajput2006@gmail.com' ||
+        request.auth.token.email == 'Advaitinsights1927@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['id', 'name', 'role']) &&
+        data.id is string && isValidId(data.id) &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+        data.role in ['student', 'teacher', 'admin'] &&
+        (!('email' in data) || (data.email is string && data.email.size() <= 150)) &&
+        (!('grade' in data) || data.grade in ['class9', 'class10']) &&
+        (!('advaitCoins' in data) || data.advaitCoins is number);
+    }
+
+    function isValidDoubt(data) {
+      return data.keys().hasAll(['id', 'studentId', 'questionText']) &&
+        data.id is string && isValidId(data.id) &&
+        data.studentId is string && isValidId(data.studentId) &&
+        data.questionText is string && data.questionText.size() > 0 && data.questionText.size() <= 1000 &&
+        (!('studentName' in data) || (data.studentName is string && data.studentName.size() <= 100)) &&
+        (!('chapter' in data) || (data.chapter is string && data.chapter.size() <= 100)) &&
+        (!('status' in data) || data.status in ['open', 'resolved']);
+    }
+
+    // Connection testing
+    match /test/{testId} {
+      allow read, write: if true;
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow list: if isSignedIn() && resource.data.id == request.auth.uid;
+      allow create: if isSignedIn() && request.auth.uid == userId && isValidUser(incoming());
+      allow update: if isSignedIn() && (request.auth.uid == userId || isAdmin()) &&
+        isValidUser(incoming()) && incoming().id == existing().id;
+      allow delete: if isAdmin();
+    }
+
+    // Doubts Collection
+    match /doubts/{doubtId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && incoming().studentId == request.auth.uid && isValidDoubt(incoming());
+      allow update: if isSignedIn() && (existing().studentId == request.auth.uid || isAdmin()) && isValidDoubt(incoming());
+      allow delete: if isSignedIn() && (existing().studentId == request.auth.uid || isAdmin());
+    }
+  }
+}
